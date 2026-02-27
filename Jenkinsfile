@@ -47,16 +47,29 @@ pipeline {
                 script {
                     echo 'deploying docker image to EC2...'
 
-                    def shellCmd = "bash ./server-cmds.sh ${IMAGE_NAME}"
-                    def ec2Instance = "ec2-user@18.184.54.160"
+                    def ec2Instance = "ec2-user@18.194.233.241"
 
+                    // Copy files from Jenkins to EC2 using SSH key
                     sshagent(['ec2-server-key']) {
                         sh "scp server-cmds.sh ${ec2Instance}:/home/ec2-user"
                         sh "scp docker-compose.yaml ${ec2Instance}:/home/ec2-user"
-                        sh "ssh -o StrictHostKeyChecking=no ${ec2Instance} ${shellCmd}"
+                    }
+
+                    // Run the script on EC2 via SSM (or ssh)
+                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding',
+                                    credentialsId: 'aws-jenkins-key',
+                                    accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
+                        sh """
+                            aws ssm send-command \
+                            --instance-ids i-08fb1bc876cd3897b \
+                            --document-name "AWS-RunShellScript" \
+                            --parameters 'commands=["bash /home/ec2-user/server-cmds.sh ${env.IMAGE_NAME}"]' \
+                            --region eu-central-1
+                        """
                     }
                 }
-            }               
+            }
         }
         stage('commit version update'){
             steps {

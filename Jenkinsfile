@@ -3,14 +3,14 @@
 library identifier: 'jenkins-shared-library@main', retriever: modernSCM(
     [$class: 'GitSCMSource',
     remote: 'https://github.com/Alee7hub/jenkins-shared-library.git',
-    credentialsID: 'github-pat'
+    credentialsId: 'github-pat'
     ]
 )
 
 pipeline {
     agent any
     tools {
-        maven 'Maven'
+        maven 'maven-3.9'
     }
     stages {
         stage('increment version') {

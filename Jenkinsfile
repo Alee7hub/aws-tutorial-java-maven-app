@@ -47,19 +47,21 @@ pipeline {
                 script {
                     echo 'deploying docker image to EC2...'
 
-                    def ec2Instance = "ec2-user@18.194.233.241"
+                    def ec2Instance = "ec2-user@i-08fb1bc876cd3897b"
+                    def ssmProxy = "sh -c 'aws ssm start-session --target i-08fb1bc876cd3897b --document-name AWS-StartSSHSession --parameters portNumber=%p --region eu-central-1'"
 
-                    // Copy files from Jenkins to EC2 using SSH key
-                    sshagent(['ec2-server-key']) {
-                        sh "scp server-cmds.sh ${ec2Instance}:/home/ec2-user"
-                        sh "scp docker-compose.yaml ${ec2Instance}:/home/ec2-user"
-                    }
-
-                    // Run the script on EC2 via SSM (or ssh)
                     withCredentials([[$class: 'AmazonWebServicesCredentialsBinding',
                                     credentialsId: 'aws-jenkins-key',
                                     accessKeyVariable: 'AWS_ACCESS_KEY_ID',
                                     secretKeyVariable: 'AWS_SECRET_ACCESS_KEY']]) {
+
+                        // Copy files from Jenkins to EC2 using scp tunneled through SSM
+                        sshagent(['ec2-server-key']) {
+                            sh "scp -O -o StrictHostKeyChecking=no -o 'ProxyCommand=${ssmProxy}' server-cmds.sh ${ec2Instance}:/home/ec2-user"
+                            sh "scp -O -o StrictHostKeyChecking=no -o 'ProxyCommand=${ssmProxy}' docker-compose.yaml ${ec2Instance}:/home/ec2-user"
+                        }
+
+                        // Run the script on EC2 via SSM
                         sh """
                             aws ssm send-command \
                             --instance-ids i-08fb1bc876cd3897b \

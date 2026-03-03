@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+set -e
+
+source /etc/profile
+source ~/.bash_profile || true
 
 export IMAGE=$1
 cd /home/ec2-user

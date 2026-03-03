@@ -69,13 +69,29 @@ pipeline {
                             """
                         }
 
-                        // Run the script on EC2 via SSM
+                        // Run the script on EC2 via SSM and wait for result
                         sh """
-                            aws ssm send-command \
+                            COMMAND_ID=\$(aws ssm send-command \
                             --instance-ids i-08fb1bc876cd3897b \
                             --document-name "AWS-RunShellScript" \
                             --parameters 'commands=["bash /home/ec2-user/server-cmds.sh ${env.IMAGE_NAME}"]' \
+                            --region eu-central-1 \
+                            --query 'Command.CommandId' \
+                            --output text)
+
+                            echo "SSM Command ID: \$COMMAND_ID"
+
+                            aws ssm wait command-executed \
+                            --command-id \$COMMAND_ID \
+                            --instance-id i-08fb1bc876cd3897b \
                             --region eu-central-1
+
+                            aws ssm get-command-invocation \
+                            --command-id \$COMMAND_ID \
+                            --instance-id i-08fb1bc876cd3897b \
+                            --region eu-central-1 \
+                            --query 'StandardOutputContent' \
+                            --output text
                         """
                     }
                 }

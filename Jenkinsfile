@@ -84,14 +84,35 @@ pipeline {
                             aws ssm wait command-executed \
                             --command-id \$COMMAND_ID \
                             --instance-id i-08fb1bc876cd3897b \
-                            --region eu-central-1
+                            --region eu-central-1 || true
 
+                            STATUS=\$(aws ssm get-command-invocation \
+                            --command-id \$COMMAND_ID \
+                            --instance-id i-08fb1bc876cd3897b \
+                            --region eu-central-1 \
+                            --query 'Status' \
+                            --output text)
+
+                            echo "--- STDOUT ---"
                             aws ssm get-command-invocation \
                             --command-id \$COMMAND_ID \
                             --instance-id i-08fb1bc876cd3897b \
                             --region eu-central-1 \
                             --query 'StandardOutputContent' \
                             --output text
+
+                            echo "--- STDERR ---"
+                            aws ssm get-command-invocation \
+                            --command-id \$COMMAND_ID \
+                            --instance-id i-08fb1bc876cd3897b \
+                            --region eu-central-1 \
+                            --query 'StandardErrorContent' \
+                            --output text
+
+                            if [ "\$STATUS" != "Success" ]; then
+                                echo "SSM command failed with status: \$STATUS"
+                                exit 1
+                            fi
                         """
                     }
                 }

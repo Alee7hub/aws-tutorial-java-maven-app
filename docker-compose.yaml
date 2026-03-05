@@ -1,6 +1,6 @@
 services:
     java-maven-app:
-      image: alikakavand/demo-app:jma-1.0
+      image: ${IMAGE}
       ports:
         - 8080:8080
     postgres:

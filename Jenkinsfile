@@ -63,9 +63,9 @@ pipeline {
                 script {
                     withCredentials([usernamePassword(credentialsId: 'github-pat', passwordVariable: 'PASS', usernameVariable: 'USER')]){
                         sh 'git remote set-url origin https://$USER:$PASS@github.com/Alee7hub/java-maven-app.git'
-                        sh 'git pull --rebase origin jenkins-jobs'
                         sh 'git add .'
                         sh 'git commit -m "ci: version bump"'
+                        sh 'git pull --rebase origin jenkins-jobs'
                         sh 'git push origin HEAD:jenkins-jobs'
                     }
                 }
